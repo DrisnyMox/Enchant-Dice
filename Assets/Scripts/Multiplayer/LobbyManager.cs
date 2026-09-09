@@ -177,6 +177,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         PhotonNetwork.CreateRoom(null, roomOptions);
         startCreateRoom = true;
+        createRoomTimer = 0;
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -185,6 +186,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         print($"!!! Ошибка создания команты {returnCode}# {message}");
 
+        GoOffline();
+    }
+
+    // Комнату создать не вышло — играем в одиночку
+    void GoOffline()
+    {
+        startCreateRoom = false;
+        isOffline = true;
         OnLeftRoom();
     }
 
@@ -205,6 +214,9 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         print("Припиздяшил, Уебок " + PhotonNetwork.NickName);
+
+        // В комнате — сторожевой таймер создания больше не нужен
+        startCreateRoom = false;
 
         float waitTime = 0;
         int timeThresold = 5;
@@ -318,10 +330,10 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         if (startCreateRoom)
         {
             createRoomTimer += Time.deltaTime;
-            if (createRoomTimer > 1.5f)
+            if (createRoomTimer > 3f)
             {
-                startCreateRoom = false;
-                OnLeftRoom();
+                print("!!! Photon молчит при создании комнаты, уходим в оффлайн");
+                GoOffline();
             }
         }
 
