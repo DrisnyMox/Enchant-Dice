@@ -780,6 +780,7 @@ MonoBehaviour:
   btnChestResult: {fileID: 8780705300818801180}
   btnTutor: {fileID: 6412598099042927270}
   coinAnim: {fileID: 916516398327968673}
+  stonesAnim: {fileID: 3674826137544608305}
   labelExp: {fileID: 3270587851106014630}
   labelGold: {fileID: 9182371017619918740}
   labelStones: {fileID: 2814962179638793820}
@@ -1315,6 +1316,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3674826137544608305 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4093802009672929561, guid: 04e6f8665520a564980f1792ef4ef742, type: 3}
+  m_PrefabInstance: {fileID: 733948037805579048}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9d8803d40ec6a8449a3132be7ed9a1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &9182371017619918740 stripped

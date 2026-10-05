@@ -256,6 +256,7 @@ GameObject:
   - component: {fileID: 4623394638663726240}
   - component: {fileID: 3586470517508351383}
   - component: {fileID: 8347638715515871611}
+  - component: {fileID: 6123806491117372890}
   m_Layer: 5
   m_Name: Stones Curency View
   m_TagString: Untagged
@@ -324,6 +325,24 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &6123806491117372890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6039379590723077916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9d8803d40ec6a8449a3132be7ed9a1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coinText: {fileID: 4689226156445342135}
+  coinIcon: {fileID: 7036405090888919786}
+  pulseScale: 1.2
+  pulseDuration: 0.2
+  minPulses: 3
+  maxPulses: 7
 --- !u!1 &8474732327133382692
 GameObject:
   m_ObjectHideFlags: 0
