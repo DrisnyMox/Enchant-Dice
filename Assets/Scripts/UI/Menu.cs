@@ -102,6 +102,16 @@ public class Menu : MonoBehaviour
             panelShop.Init();
             panelShop.onCoinsUpdate.AddListener(UserData_Updated);
             panelShop.onStonesUpdate += StonesData_Updated;
+
+            //  уда лететь камн€м, считаетс€ в рантайме по фактическим позици€м:
+            // система частиц живЄт в префабе магазина, аттрактор Ч в префабе счЄтчика,
+            // ссылку между разными префабами не положить, поэтому св€зываем здесь
+            if (stonesAnim && panelShop.FlyStonesEffect)
+            {
+                var attractor = stonesAnim.GetComponent<Coffee.UIExtensions.UIParticleAttractor>();
+                if (attractor)
+                    attractor.AddParticleSystem(panelShop.FlyStonesEffect);
+            }
 #if UNITY_WEBGL
 
             if (YG.YandexGame.savesData != null && string.IsNullOrEmpty(YG.YandexGame.savesData.newPlayerName))

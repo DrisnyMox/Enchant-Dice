@@ -33,6 +33,8 @@ public class PanelShop : MonoBehaviour
     // Камни считает не UnityEvent, а обычный Action — сериализовать его не нужно
     public System.Action<float> onStonesUpdate;
 
+    public ParticleSystem FlyStonesEffect => flyStonesEffect;
+
     const string rewardedCoinsKey = "rewardedCoins";
     const string coinsRewardIdxKey = "coinsRewardIdxKey";
     const string coinsRewardResetKey = "coinsRewardResetKey";// Нужен для сброса просмотренности рекламы

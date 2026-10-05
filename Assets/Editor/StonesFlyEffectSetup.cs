@@ -1,4 +1,5 @@
 using System.Linq;
+using Coffee.UIExtensions;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -22,6 +23,11 @@ public static class StonesFlyEffectSetup
     const string StoneTexturePath = "Assets/Sprites/Increase Stone.psd";
 
     const string EffectName = "Stones Fly Effect";
+
+    // Частица долетает до цели примерно за своё время жизни после рождения.
+    // Рождаются они с 0.3 до 1.5 сек, значит прилетят в 1.8-3.0 — вокруг момента,
+    // когда счётчик начинает докручиваться
+    const float ParticleLifetime = 1.5f;
 
     [MenuItem("Tools/Enchant Dice/Собрать эффект летящих камней")]
     public static void Build()
@@ -158,6 +164,13 @@ public static class StonesFlyEffectSetup
                 return false;
             }
 
+            // Эффект монет летит по прямой в мировом пространстве: направление задано
+            // поворотом и подогнано под положение счётчика золота. У камней и кнопка,
+            // и счётчик стоят в других местах, поэтому направление считает аттрактор,
+            // а нам остаётся согласовать время жизни с досчётом счётчика (2.1 сек)
+            var main = particles.main;
+            main.startLifetime = ParticleLifetime;
+
             so.FindProperty("flyStonesEffect").objectReferenceValue = particles;
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -227,6 +240,21 @@ public static class StonesFlyEffectSetup
             animator.maxPulses = 7;
 
             Debug.Log($"[Камни] Аниматор счётчика: текст '{text.name}', иконка '{icon.name}'");
+
+            // Аттрактор тянет частицы к себе, то есть к счётчику. Список систем
+            // оставляем пустым: система живёт в другом префабе, ссылку туда положить
+            // нельзя, её подставляет Menu при инициализации
+            var attractor = root.GetComponent<UIParticleAttractor>();
+            if (!attractor)
+            {
+                attractor = root.AddComponent<UIParticleAttractor>();
+                Debug.Log($"[Камни] На {root.name} добавлен UIParticleAttractor");
+            }
+
+            attractor.movement = UIParticleAttractor.Movement.Smooth;
+            attractor.maxSpeed = 2f;
+            attractor.delay = 0.1f;
+            attractor.destinationRadius = 1f;
 
             PrefabUtility.SaveAsPrefabAsset(root, StonesViewPrefabPath);
             return true;
