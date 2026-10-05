@@ -180,15 +180,24 @@ public class UI : MonoBehaviour
     {
         Advertising.ShowVideoAd();
 
-        if (Photon.Pun.PhotonNetwork.CurrentRoom == null)
+        // LeaveRoom возвращает false, если связь уже потеряна. Тогда OnLeftRoom не придёт
+        // и игрок останется на экране результатов навсегда
+        if (Photon.Pun.PhotonNetwork.CurrentRoom == null || !Photon.Pun.PhotonNetwork.LeaveRoom())
         {
             UnityEngine.SceneManagement.SceneManager.LoadScene("Menuha");
+            return;
+        }
 
-        }
-        else
-        {
-            Photon.Pun.PhotonNetwork.LeaveRoom();
-        }
+        StartCoroutine(WaitLeftRoom());
+    }
+
+    // Страховка на случай, если ответ от Photon так и не придёт
+    IEnumerator WaitLeftRoom()
+    {
+        yield return new WaitForSecondsRealtime(5);
+
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Menuha")
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Menuha");
     }
 
     void SpawnDice_Clicked()
@@ -263,7 +272,8 @@ public class UI : MonoBehaviour
             var txtCardReceived = Language.Rus ? "Карточек получено" : "Cards received";
             labelCountCards.text = $"{txtCardReceived} {waves}";
 
-            User.Data.countCards += waves;
+            // Часть карточек уже начислена по ходу забега, доначисляем только остаток
+            User.Data.countCards += waves - GameManager.Instance.CardsGranted;
 
             if (User.Data.maxWave < waves)
             {

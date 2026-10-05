@@ -45,13 +45,16 @@ public class PanelIncrease : MonoBehaviour
         resultDiceView.Init(dice);
         resultDiceView.UpdateIncreaseView(dice.IncreaseStage);
 
-        if (dice.IncreaseStage == 5)
+        if (dice.IncreaseStage >= Settings.MAX_INCREASE_STAGE)
             btnIncrease.gameObject.SetActive(false);
 
     }
 
     private void BtnIncrease_Clicked()
     {
+        if (dice.IncreaseStage >= Settings.MAX_INCREASE_STAGE)
+            return;
+
         if (User.Data.countStones < countRequiredItems)
             return;
 
@@ -104,7 +107,7 @@ public class PanelIncrease : MonoBehaviour
             text = $"Увеличение шанса усиление +{additionalChanceIncrese}";
         }
         labelAdditionalChance.text = text;
-        btnIncrease.gameObject.SetActive(!(dice.IncreaseStage == 5));
+        btnIncrease.gameObject.SetActive(dice.IncreaseStage < Settings.MAX_INCREASE_STAGE);
 
     }
 

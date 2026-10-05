@@ -36,6 +36,9 @@ public class GameManager : MonoBehaviour
     public bool IsPVP { get; private set; }
     public int Wave { get; set; }
 
+    // Сколько карточек уже выдано по ходу забега — остаток доначисляется в конце матча
+    public int CardsGranted { get; private set; }
+
     public static GameManager Instance { get; private set; }
 
     public UnityEvent onEnemiesListChange;
@@ -97,7 +100,25 @@ public class GameManager : MonoBehaviour
             {
                 player.Coins += 10 * Wave;
             }
+
+            GrantWaveReward();
         }
+    }
+
+    // Награду за кооп начисляем по волнам, а не одним пакетом в конце матча:
+    // при вылете посреди забега игрок больше не теряет весь прогресс
+    void GrantWaveReward()
+    {
+        if (IsPVP)
+            return;
+
+        CardsGranted++;
+        User.Data.countCards++;
+
+        if (User.Data.maxWave < Wave)
+            User.Data.maxWave = Wave;
+
+        Saver.Save();
     }
 
     void SpawnEnemies()

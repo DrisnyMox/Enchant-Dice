@@ -121,33 +121,36 @@ public class Dice : MonoBehaviour
 
     public void Increase()
     {
+        if (IncreaseStage >= Settings.MAX_INCREASE_STAGE)
+            return;
+
         DisableAllStages();
 
         IncreaseStage++;
 
-        string increaseLabel = string.Empty;
-        switch (IncreaseStage)
-        {
-            case 1:
-                increaseLabel = "I";
-                break;
-            case 2:
-                increaseLabel = "II";
-                break;
-            case 3:
-                increaseLabel = "III";
-                break;
-            case 4:
-                increaseLabel = "IV";
-                break;
-            case 5:
-                increaseLabel = "V";
-                break;
-        }
-
-        labelIncrese.text = increaseLabel;
+        labelIncrese.text = RomanNumeral(IncreaseStage);
 
         labelIncrese.gameObject.SetActive(true);
+    }
+
+    // Считаем, а не перечисляем: при поднятии MAX_INCREASE_STAGE метка не отвалится
+    public static string RomanNumeral(int value)
+    {
+        int[] weights = { 10, 9, 5, 4, 1 };
+        string[] signs = { "X", "IX", "V", "IV", "I" };
+
+        string result = string.Empty;
+
+        for (int i = 0; i < weights.Length; i++)
+        {
+            while (value >= weights[i])
+            {
+                result += signs[i];
+                value -= weights[i];
+            }
+        }
+
+        return result;
     }
 
     void DisableAllStages()
@@ -162,10 +165,12 @@ public class Dice : MonoBehaviour
     {
         Attack();
 
+#if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.I))
         {
             AddDots();
         }
+#endif
 
         finalFireRate = CurrentRateThreshold();
     }

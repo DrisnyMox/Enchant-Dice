@@ -89,12 +89,23 @@ public class PlayerInput : MonoBehaviour
             return;
 
         var mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        var hits = Physics2D.RaycastAll(mousePos, Vector2.zero).Select(h => h.collider.GetComponent<Dice>()).ToList();
+        var hits = Physics2D.RaycastAll(mousePos, Vector2.zero)
+            .Select(h => h.collider.GetComponent<Dice>())
+            .Where(d => d)
+            .ToList();
 
-        var otherDice = hits.Find(d => d != dice);
+        // Сливать можно только со своими кубиками, иначе кубик уезжает на чужой стол
+        var otherDice = hits.Find(d => d != dice && d.Team == dice.Team);
 
         var typeCondition = otherDice && (dice.Color == otherDice.Color || (dice && dice is Chameleon) || otherDice is Chameleon);
-        if (otherDice && dice.Stage == otherDice.Stage && typeCondition && dice.IncreaseStage < 1)
+        var canMerge = otherDice && dice.Stage == otherDice.Stage && typeCondition && dice.IncreaseStage < 1;
+
+        // На максимальной стадии слияние поднимает пробуждение, но выше потолка его не поднять,
+        // поэтому кубик не должен пропадать впустую
+        if (canMerge && dice.Stage == MAX_STAGE && otherDice.IncreaseStage >= MAX_INCREASE_STAGE)
+            canMerge = false;
+
+        if (canMerge)
         {
             if(dice.Stage < MAX_STAGE)
             {

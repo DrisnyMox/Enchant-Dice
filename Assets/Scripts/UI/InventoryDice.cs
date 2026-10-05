@@ -45,27 +45,7 @@ public class InventoryDice : MonoBehaviour
 
     public void UpdateIncreaseView(int increaseStage)
     {
-        string increaseLabel = string.Empty;
-        switch (increaseStage)
-        {
-            case 1:
-                increaseLabel = "I";
-                break;
-            case 2:
-                increaseLabel = "II";
-                break;
-            case 3:
-                increaseLabel = "III";
-                break;
-            case 4:
-                increaseLabel = "IV";
-                break;
-            case 5:
-                increaseLabel = "V";
-                break;
-        }
-
-        labelIncrease.text = increaseLabel;
+        labelIncrease.text = Dice.RomanNumeral(increaseStage);
         labelIncrease.color = Color;
 
         labelIncrease.gameObject.SetActive(true);
