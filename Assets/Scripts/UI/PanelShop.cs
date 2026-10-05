@@ -49,6 +49,22 @@ public class PanelShop : MonoBehaviour
 
     public void Init()
     {
+        // Кулдауны должны жить там же, где валюта, иначе их сбрасывает смена браузера
+        DailyRewardModule.ReadValue = RewardStorage.Read;
+        DailyRewardModule.WriteValue = RewardStorage.Write;
+
+        RewardStorage.MigrateFromPlayerPrefs
+        (
+            new[]
+            {
+                DailyRewardModule.StorageKey(rewardedCoinsKey),
+                DailyRewardModule.StorageKey(coinsRewardResetKey),
+                DailyRewardModule.StorageKey(coinsFreeKey),
+                DailyRewardModule.StorageKey(stonesFreeKey),
+            },
+            new[] { coinsRewardIdxKey }
+        );
+
         DailyRewardModule.RegisterReward(rewardedCoinsKey, DailyRewardModule.ResetMode.FixedInterval, TimeSpan.FromMinutes(30));
         DailyRewardModule.RegisterReward(coinsRewardResetKey, DailyRewardModule.ResetMode.DailyUtcReset);
         //DailyRewardModule.RegisterReward(coinsRewardResetKey, DailyRewardModule.ResetMode.FixedInterval, TimeSpan.FromMinutes(3));
@@ -104,10 +120,14 @@ public class PanelShop : MonoBehaviour
         }
         else
         {
-            DailyRewardModule.Claim(stonesFreeKey, null);
+            // Награду выдаёт сам модуль и только если она действительно доступна.
+            // Раньше начисление стояло снаружи, и единственной защитой от повторной
+            // выдачи было состояние кнопки
+            if (!DailyRewardModule.Claim(stonesFreeKey, () => User.Data.countStones += 100))
+                return;
+
             btnFreeStones.GetComponent<AttentionAnim>().Play();
             btnFreeStonesAvailable.Unavailable();
-            User.Data.countStones += 100;
             Saver.Save();
         }
     }
@@ -122,10 +142,11 @@ public class PanelShop : MonoBehaviour
         }
         else
         {
-            DailyRewardModule.Claim(coinsFreeKey, null);
+            if (!DailyRewardModule.Claim(coinsFreeKey, () => User.Data.golda += 100))
+                return;
+
             btnFreeCoins.GetComponent<AttentionAnim>().Play();
-            btnFreeCoins.GetComponent<AvailableView>().Unavailable();
-            User.Data.golda += 100;
+            btnFreeCoinsAvailable.Unavailable();
             Saver.Save();
             flyCoinsEffect.Play();
             onCoinsUpdate?.Invoke(2.1f);
@@ -153,11 +174,7 @@ public class PanelShop : MonoBehaviour
 
             Action doAvailables = () => { };
 
-            var maxWatchedIdx = 0;
-            if (PlayerPrefs.HasKey(coinsRewardIdxKey))
-            {
-                maxWatchedIdx = PlayerPrefs.GetInt(coinsRewardIdxKey);
-            }
+            var maxWatchedIdx = RewardStorage.ReadInt(coinsRewardIdxKey, 0);
 
             int reward = 0;
             if (rewardID == 0)
@@ -193,8 +210,7 @@ public class PanelShop : MonoBehaviour
             if (maxWatchedIdx <= rewardID)
             {
                 maxWatchedIdx = rewardID;
-                PlayerPrefs.SetInt(coinsRewardIdxKey, rewardID);
-                PlayerPrefs.Save();
+                RewardStorage.WriteInt(coinsRewardIdxKey, rewardID);
             }
 
             CheckMaxWatchedIdx();
@@ -250,10 +266,9 @@ public class PanelShop : MonoBehaviour
         }
 
         // Проверка доступности
-        if (DailyRewardModule.CanClaim(coinsRewardResetKey) && PlayerPrefs.HasKey(coinsRewardIdxKey))
+        if (DailyRewardModule.CanClaim(coinsRewardResetKey) && RewardStorage.Has(coinsRewardIdxKey))
         {
-            PlayerPrefs.DeleteKey(coinsRewardIdxKey);
-            PlayerPrefs.Save();
+            RewardStorage.Delete(coinsRewardIdxKey);
 
             //DailyRewardModule.Claim(coinsRewardResetKey, null);
 
@@ -324,7 +339,7 @@ public class PanelShop : MonoBehaviour
             var btnCoins = btnsCoinsRewarded[i];
 
 
-            if (!PlayerPrefs.HasKey(coinsRewardIdxKey))
+            if (!RewardStorage.Has(coinsRewardIdxKey))
             {
                 if (i == 0)
                 {
@@ -337,7 +352,7 @@ public class PanelShop : MonoBehaviour
             }
             else
             {
-                var watchedIdx = PlayerPrefs.GetInt(coinsRewardIdxKey);
+                var watchedIdx = RewardStorage.ReadInt(coinsRewardIdxKey, 0);
                 if (i <= watchedIdx)
                 {
                     btnCoins.Watched();

@@ -19,6 +19,20 @@ public static class DailyRewardModule
     private const string PrefsPrefix = "DailyReward_";
     private const string TimeFormat = "o";
 
+    // Где лежат метки времени. По умолчанию PlayerPrefs, но проект может подменить
+    // хранилище на облачный сейв — иначе кулдаун сбрасывается сменой браузера
+    // или устройства, а выданная награда остаётся у игрока
+    public static Func<string, string> ReadValue =
+        key => PlayerPrefs.HasKey(key) ? PlayerPrefs.GetString(key) : null;
+
+    public static Action<string, string> WriteValue = (key, value) =>
+    {
+        PlayerPrefs.SetString(key, value);
+        PlayerPrefs.Save();
+    };
+
+    public static string StorageKey(string key) => PrefsPrefix + key;
+
     public static void RegisterReward(string key, ResetMode mode, TimeSpan interval = default)
     {
         // allow re-registration (update) to avoid silent misconfigurations
@@ -49,10 +63,8 @@ public static class DailyRewardModule
 
         onClaimed?.Invoke();
 
-        string prefKey = PrefsPrefix + key;
         string now = DateTime.UtcNow.ToString(TimeFormat, CultureInfo.InvariantCulture);
-        PlayerPrefs.SetString(prefKey, now);
-        PlayerPrefs.Save();
+        WriteValue(StorageKey(key), now);
         return true;
     }
 
@@ -76,10 +88,9 @@ public static class DailyRewardModule
 
     private static DateTime ReadLastClaimTime(string key)
     {
-        string prefKey = PrefsPrefix + key;
-        if (!PlayerPrefs.HasKey(prefKey)) return DateTime.MinValue;
+        string stored = ReadValue(StorageKey(key));
+        if (string.IsNullOrEmpty(stored)) return DateTime.MinValue;
 
-        string stored = PlayerPrefs.GetString(prefKey);
         if (DateTime.TryParseExact(stored, TimeFormat, CultureInfo.InvariantCulture,
             DateTimeStyles.RoundtripKind, out var last))
         {

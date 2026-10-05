@@ -30,6 +30,19 @@ namespace YG
 
         // Ваши сохранения
 
+        // Кулдауны дневных наград и прогресс рекламных кнопок.
+        // Держим рядом с валютой: в PlayerPrefs они сбрасывались сменой браузера
+        // или очисткой данных сайта, а начисленные монеты оставались на аккаунте
+        public List<RewardEntry> rewardCooldowns = new List<RewardEntry>();
+        public bool rewardCooldownsMigrated;
+
+        [System.Serializable]
+        public class RewardEntry
+        {
+            public string key;
+            public string value;
+        }
+
         // ...
 
         // Поля (сохранения) можно удалять и создавать новые. При обновлении игры сохранения ломаться не должны
