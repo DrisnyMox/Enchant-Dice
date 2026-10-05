@@ -51,20 +51,10 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         
 
         //PhotonNetwork.AuthValues = new AuthenticationValues(PhotonNetwork.NickName);
-        if (!PhotonNetwork.IsConnectedAndReady)
-        {
-            PhotonNetwork.AutomaticallySyncScene = true;
-            PhotonNetwork.GameVersion = "1";
-
-            PhotonNetwork.SerializationRate = 30;
-            PhotonNetwork.SendRate = 60;
-
-            PhotonNetwork.ConnectUsingSettings();
-        }
-        
+        TryConnect();
 
         var ebat = FindObjectOfType<Advertising>();
-        ebat.onVideoClosed += () => PhotonNetwork.ConnectUsingSettings();
+        ebat.onVideoClosed += SyncConnection;
 
         PhotonNetwork.KeepAliveInBackground = 180;
     }
@@ -279,37 +269,16 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     private void OnApplicationPause(bool pause)
     {
         if (!pause)
-        {
-            if (PhotonNetwork.NetworkClientState != ClientState.ConnectedToMasterServer)
-            {
-                HideBattleButtons();
-                DelayConnect();
-            }
-        }
+            SyncConnection();
     }
 
     private void OnApplicationFocus(bool focus)
     {
-        if (PhotonNetwork.NetworkClientState != ClientState.ConnectedToMasterServer)
-        {
-            HideBattleButtons();
-            DelayConnect();
-        }
+        // Раньше focus не проверялся, и проверка шла ещё и на потерю фокуса
+        if (focus)
+            SyncConnection();
     }
 
-    private void DelayConnect()
-    {
-        StartCoroutine(Delay());
-
-        static IEnumerator Delay()
-        {
-            yield return new WaitForSeconds(0.3f);
-
-            PhotonNetwork.ConnectUsingSettings();
-        }
-    }
-
-   
 
     private void Update()
     {
@@ -346,14 +315,58 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         timerCheckConnection += Time.deltaTime;
 
         if (timerCheckConnection > 0.5f)
-        {
-            timerCheckConnection = 0;
+            SyncConnection();
+    }
 
-            if (!PhotonNetwork.IsConnected)
-            {
+    // Единственное место, которое решает и про кнопки, и про переподключение.
+    // Видимость кнопок ведём от фактического состояния клиента, а не от одного
+    // коллбэка: OnConnectedToMaster не приходит, когда мы и так подключены,
+    // поэтому раньше плашка "Подключение" могла висеть поверх живого соединения
+    void SyncConnection()
+    {
+        timerCheckConnection = 0;
+
+        // В Awake и в первом OnApplicationFocus ссылки на UI ещё не разобраны
+        if (connectingInfo)
+        {
+            if (PhotonNetwork.IsConnectedAndReady)
+                ShowBattleButtons();
+            else if (!PhotonNetwork.IsConnected)
                 HideBattleButtons();
-                DelayConnect();
-            }
+
+            // Промежуточные состояния (Joining, Leaving, переход на игровой сервер)
+            // не трогаем: там соединение живое, а кнопки иначе моргают прямо
+            // во время подбора игры
+        }
+
+        TryConnect();
+    }
+
+    void TryConnect()
+    {
+        if (!CanConnect)
+            return;
+
+        PhotonNetwork.AutomaticallySyncScene = true;
+        PhotonNetwork.GameVersion = "1";
+
+        PhotonNetwork.SerializationRate = 30;
+        PhotonNetwork.SendRate = 60;
+
+        PhotonNetwork.ConnectUsingSettings();
+    }
+
+    // Photon пускает ConnectUsingSettings только из PeerState.Disconnected — ровно это
+    // он проверяет у себя внутри. Сверяемся заранее: отказ соединение не поднимает,
+    // зато сыплет предупреждениями, а вызывающий код считает, что реконнект пошёл
+    static bool CanConnect
+    {
+        get
+        {
+            var peer = PhotonNetwork.NetworkingClient?.LoadBalancingPeer;
+
+            return peer != null
+                && peer.PeerState == ExitGames.Client.Photon.PeerStateValue.Disconnected;
         }
     }
 
