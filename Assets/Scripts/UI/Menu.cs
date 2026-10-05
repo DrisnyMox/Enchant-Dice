@@ -32,6 +32,7 @@ public class Menu : MonoBehaviour
     [Space]
 
     [SerializeField] CoinRewardAnimator coinAnim;
+    [SerializeField] CoinRewardAnimator stonesAnim;
 
     [Space]
 
@@ -100,6 +101,7 @@ public class Menu : MonoBehaviour
 
             panelShop.Init();
             panelShop.onCoinsUpdate.AddListener(UserData_Updated);
+            panelShop.onStonesUpdate += StonesData_Updated;
 #if UNITY_WEBGL
 
             if (YG.YandexGame.savesData != null && string.IsNullOrEmpty(YG.YandexGame.savesData.newPlayerName))
@@ -149,6 +151,23 @@ public class Menu : MonoBehaviour
         {
             panelChestResult.SetActive(false);
         } 
+    }
+
+    // Пока счётчик досчитывает до новой суммы, Update не должен перебивать его
+    bool stonesDataUpdate = false;
+    private void StonesData_Updated(float delay)
+    {
+        if (!stonesAnim)
+            return;
+
+        stonesDataUpdate = true;
+
+        LeanTween.delayedCall(delay, Delay);
+
+        void Delay()
+        {
+            stonesAnim.Play(1.5f, User.Data.countStones, () => { stonesDataUpdate = false; });
+        }
     }
 
     bool userDataUpdate = false;
@@ -357,7 +376,10 @@ public class Menu : MonoBehaviour
         {
             labelGold.SetText($"{User.Data.golda}");
         }
-        labelStones.SetText($"{User.Data.countStones}");
+        if (!stonesDataUpdate)
+        {
+            labelStones.SetText($"{User.Data.countStones}");
+        }
     }
 
     private void LB_geted(LBData obj)

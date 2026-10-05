@@ -13,6 +13,7 @@ public class PanelShop : MonoBehaviour
     [SerializeField] Button btnFreeCoins;
     [SerializeField] Button btnFreeStones;
     [SerializeField] ParticleSystem flyCoinsEffect;
+    [SerializeField] ParticleSystem flyStonesEffect;
 
     [Header("МОНЕТКИ ЗА РЕКЛАМУ")]
     [SerializeField] BtnCoinsRewarded[] btnsCoinsRewarded;
@@ -28,6 +29,9 @@ public class PanelShop : MonoBehaviour
     [SerializeField] Sprite stoneSprite;
 
     [HideInInspector] public UnityEvent<float> onCoinsUpdate;
+
+    // Камни считает не UnityEvent, а обычный Action — сериализовать его не нужно
+    public System.Action<float> onStonesUpdate;
 
     const string rewardedCoinsKey = "rewardedCoins";
     const string coinsRewardIdxKey = "coinsRewardIdxKey";
@@ -129,6 +133,12 @@ public class PanelShop : MonoBehaviour
             btnFreeStones.GetComponent<AttentionAnim>().Play();
             btnFreeStonesAvailable.Unavailable();
             Saver.Save();
+
+            // Эффект собирается скриптом Tools/Enchant Dice, до его запуска ссылки нет
+            if (flyStonesEffect)
+                flyStonesEffect.Play();
+
+            onStonesUpdate?.Invoke(2.1f);
         }
     }
 
