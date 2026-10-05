@@ -31,7 +31,21 @@ public static class DailyRewardModule
         PlayerPrefs.Save();
     };
 
+    public static Action<string> DeleteValue = key =>
+    {
+        PlayerPrefs.DeleteKey(key);
+        PlayerPrefs.Save();
+    };
+
     public static string StorageKey(string key) => PrefsPrefix + key;
+
+    // —нимает кулдаун со всех зарегистрированных наград. Ќужно дл€ отладки:
+    // иначе дневную награду не проверить до следующей полуночи UTC
+    public static void ResetAll()
+    {
+        foreach (var key in _configs.Keys)
+            DeleteValue(StorageKey(key));
+    }
 
     public static void RegisterReward(string key, ResetMode mode, TimeSpan interval = default)
     {

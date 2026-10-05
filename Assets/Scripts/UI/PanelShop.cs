@@ -56,6 +56,7 @@ public class PanelShop : MonoBehaviour
         // Кулдауны должны жить там же, где валюта, иначе их сбрасывает смена браузера
         DailyRewardModule.ReadValue = RewardStorage.Read;
         DailyRewardModule.WriteValue = RewardStorage.Write;
+        DailyRewardModule.DeleteValue = RewardStorage.Delete;
 
         RewardStorage.MigrateFromPlayerPrefs
         (
@@ -291,10 +292,12 @@ public class PanelShop : MonoBehaviour
 
 
 
+#if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.J))
         {
-            PlayerPrefs.DeleteKey(rewardedCoinsKey);
+            ResetRewards();
         }
+#endif
 
         FreeBonusUpdate();
     }
@@ -436,6 +439,22 @@ public class PanelShop : MonoBehaviour
     {
 
     }
+
+#if UNITY_EDITOR
+    // Сброс для отладки. Зовётся из Tools/Enchant Dice и с клавиши J.
+    // Чистит и кулдауны, и прогресс цепочки рекламных кнопок, после чего
+    // перерисовывает панель, чтобы не выходить из Play mode
+    public void ResetRewards()
+    {
+        DailyRewardModule.ResetAll();
+        RewardStorage.Delete(coinsRewardIdxKey);
+
+        allCoinsRewardUnavailable = false;
+        CoinsRewardCheckAvailable();
+
+        print("[Награды] Кулдауны сброшены");
+    }
+#endif
 
     public void Dispose ()
     {
