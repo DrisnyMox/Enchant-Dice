@@ -24,10 +24,8 @@ public static class StonesFlyEffectSetup
 
     const string EffectName = "Stones Fly Effect";
 
-    // Частица долетает до цели примерно за своё время жизни после рождения.
-    // Рождаются они с 0.3 до 1.5 сек, значит прилетят в 1.8-3.0 — вокруг момента,
-    // когда счётчик начинает докручиваться
-    const float ParticleLifetime = 1.5f;
+    // Доля времени жизни, которую частица летит свободно, прежде чем её потянет
+    const float AttractorDelay = 0.1f;
 
     [MenuItem("Tools/Enchant Dice/Собрать эффект летящих камней")]
     public static void Build()
@@ -36,10 +34,10 @@ public static class StonesFlyEffectSetup
         if (!material)
             return;
 
-        if (!BuildFlyEffect(material))
+        if (!BuildFlyEffect(material, out var attractorMaxSpeed))
             return;
 
-        if (!BuildCounterAnimator())
+        if (!BuildCounterAnimator(attractorMaxSpeed))
             return;
 
         // Menu ссылается на аниматор внутри вложенного префаба счётчика,
@@ -95,8 +93,10 @@ public static class StonesFlyEffectSetup
 
     // --- эффект в Panel Shop ---------------------------------------------
 
-    static bool BuildFlyEffect(Material material)
+    static bool BuildFlyEffect(Material material, out float attractorMaxSpeed)
     {
+        attractorMaxSpeed = 0f;
+
         var root = PrefabUtility.LoadPrefabContents(ShopPrefabPath);
         try
         {
@@ -166,10 +166,25 @@ public static class StonesFlyEffectSetup
 
             // Эффект монет летит по прямой в мировом пространстве: направление задано
             // поворотом и подогнано под положение счётчика золота. У камней и кнопка,
-            // и счётчик стоят в других местах, поэтому направление считает аттрактор,
-            // а нам остаётся согласовать время жизни с досчётом счётчика (2.1 сек)
+            // и счётчик стоят в других местах, поэтому направление считает аттрактор.
+            // Время жизни держим таким же, как у монет — от него зависит скорость
+            var coinsMain = coinsEffect.main;
             var main = particles.main;
-            main.startLifetime = ParticleLifetime;
+            main.startLifetime = coinsMain.startLifetime;
+
+            // Скорость аттрактора задаётся в единицах за кадр при 60 fps, а не в
+            // единицах за секунду. В режиме Linear получается ровно
+            // maxSpeed * 60 / duration единиц в секунду, где duration — время жизни
+            // за вычетом свободного полёта. Приравниваем это к startSpeed монет,
+            // чтобы камни летели с той же скоростью
+            var lifetime = coinsMain.startLifetime.constant;
+            var duration = lifetime - lifetime * AttractorDelay;
+            var coinsSpeed = coinsMain.startSpeed.constant;
+
+            attractorMaxSpeed = coinsSpeed * duration / 60f;
+
+            Debug.Log($"[Камни] Скорость монет {coinsSpeed} ед/сек при времени жизни {lifetime} " +
+                      $"=> maxSpeed аттрактора {attractorMaxSpeed:F3}");
 
             so.FindProperty("flyStonesEffect").objectReferenceValue = particles;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -200,7 +215,7 @@ public static class StonesFlyEffectSetup
 
     // --- счётчик камней ---------------------------------------------------
 
-    static bool BuildCounterAnimator()
+    static bool BuildCounterAnimator(float attractorMaxSpeed)
     {
         var root = PrefabUtility.LoadPrefabContents(StonesViewPrefabPath);
         try
@@ -251,9 +266,11 @@ public static class StonesFlyEffectSetup
                 Debug.Log($"[Камни] На {root.name} добавлен UIParticleAttractor");
             }
 
-            attractor.movement = UIParticleAttractor.Movement.Smooth;
-            attractor.maxSpeed = 2f;
-            attractor.delay = 0.1f;
+            // Linear, потому что только он даёт постоянную скорость: Smooth разгоняет
+            // частицу к концу жизни и она финиширует заметно быстрее монет
+            attractor.movement = UIParticleAttractor.Movement.Linear;
+            attractor.maxSpeed = attractorMaxSpeed;
+            attractor.delay = AttractorDelay;
             attractor.destinationRadius = 1f;
 
             PrefabUtility.SaveAsPrefabAsset(root, StonesViewPrefabPath);
